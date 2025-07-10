@@ -1,7 +1,7 @@
 # tg-spec-cli
 
 [![CI](https://github.com/superboomer/tg-spec-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/superboomer/tg-spec-cli/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/superboomer/tg-spec-cli/badge.svg?branch=main)](https://coveralls.io/github/superboomer/tg-spec-cli?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/superboomer/tg-spec-cli/badge.svg?branch=master)](https://coveralls.io/github/superboomer/tg-spec-cli?branch=master)
 
 CLI utility for generating OpenAPI specifications from the official Telegram Bot API documentation.
 

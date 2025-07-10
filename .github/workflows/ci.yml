@@ -20,9 +20,9 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v2.2.1
+          version: latest
 
   test:
     name: Test

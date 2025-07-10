@@ -1,0 +1,29 @@
+version: "1"
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - unused
+    - structcheck
+    - varcheck
+    - deadcode
+    - typecheck
+    - ineffassign
+    - gofmt
+    - goimports
+    - misspell
+    - gocritic
+    - revive
+    - gocyclo
+    - unparam
+    - gosec
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

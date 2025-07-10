@@ -22,7 +22,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v2.7.0
+          version: v2.2.1
 
   test:
     name: Test

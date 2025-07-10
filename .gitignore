@@ -22,8 +22,6 @@ tg-spec-cli
 # Go modules
 vendor/
 
-go.sum
-
 # IDE/editor files
 .vscode/
 .idea/

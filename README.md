@@ -11,13 +11,8 @@ CLI utility for generating OpenAPI specifications from the official Telegram Bot
 
 ## Installation
 
-Clone the repository and build the CLI:
-
 ```sh
-git clone https://github.com/superboomer/tg-spec-cli.git
-cd tg-spec-cli
-go build ./...
-```
+go install github.com/superboomer/tg-spec-cli/cmd/tg-spec-cli@latest
 
 ## Usage
 

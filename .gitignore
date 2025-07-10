@@ -8,8 +8,6 @@
 
 .json
 
-tg-spec-cli
-
 # Output directories
 /specs/
 

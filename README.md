@@ -13,6 +13,7 @@ CLI utility for generating OpenAPI specifications from the official Telegram Bot
 
 ```sh
 go install github.com/superboomer/tg-spec-cli/cmd/tg-spec-cli@latest
+```
 
 ## Usage
 

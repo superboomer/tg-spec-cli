@@ -21,7 +21,7 @@ var (
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate the OpenAPI specification",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		log, err := logger.New(logLevel)
 		if err != nil {
 			fmt.Printf("failed to create logger: %v", err)

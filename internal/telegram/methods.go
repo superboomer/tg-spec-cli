@@ -79,10 +79,10 @@ func (p *PageAPI) GetMethods() ([]Method, error) {
 					})
 
 					if currentMethod.ReturnType.Name == "" || !isFirstLetterUppercase(currentMethod.ReturnType.Name) {
-						switch {
-						case returnTypeName == "True":
+						switch returnTypeName {
+						case "True":
 							currentMethod.ReturnType = ReturnType{Name: "boolean", IsArray: isArray}
-						case returnTypeName == "Int":
+						case "Int":
 							currentMethod.ReturnType = ReturnType{Name: "integer", IsArray: isArray}
 						default:
 							typeData, err := p.GetType(strings.ToLower(returnTypeName))

@@ -45,7 +45,8 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 	var info openapi.Info
 	var servers []openapi.Server
 
-	if g.typeFlag == "gateway" {
+	switch g.typeFlag {
+	case "gateway":
 		info = openapi.Info{
 			Title:       "Telegram Gateway API",
 			Description: `The Gateway API is an HTTP-based interface for phone number verification and related operations. See https://core.telegram.org/gateway/api for details.`,
@@ -57,7 +58,7 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 				Description: "Telegram Gateway API server",
 			},
 		}
-	} else if g.typeFlag == "botapi" || g.typeFlag == "" {
+	case "botapi", "":
 		info = openapi.Info{
 			Title:       "Telegram Bot API",
 			Description: `The Bot API is an HTTP-based interface created for developers keen on building bots for Telegram.\nTo learn how to create and set up a bot, please consult [Introduction to Bots](https://core.telegram.org/bots) and [Bot FAQ](https://core.telegram.org/bots/faq).`,
@@ -85,7 +86,7 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 				},
 			},
 		}
-	} else {
+	default:
 		return nil, fmt.Errorf("unknown type: %s", g.typeFlag)
 	}
 
@@ -224,11 +225,8 @@ func (g *Generator) Save(openAPI *openapi.OpenAPI, outputPath string) error {
 	}
 
 	// Determine file path and directory
+	isDir := outputPath == "" || outputPath == "." || strings.HasSuffix(outputPath, "/")
 	path := outputPath
-	isDir := false
-	if path == "" || path == "." || strings.HasSuffix(path, "/") {
-		isDir = true
-	}
 	if !isDir {
 		// If path exists and is a directory, treat as directory
 		if stat, err := os.Stat(path); err == nil && stat.IsDir() {
@@ -242,7 +240,7 @@ func (g *Generator) Save(openAPI *openapi.OpenAPI, outputPath string) error {
 		if path == "" {
 			path = "."
 		}
-		path = path + "/openapi-v%v.json"
+		path += "/openapi-v%v.json"
 	}
 
 	if strings.Contains(path, "%v") {
@@ -260,7 +258,7 @@ func (g *Generator) Save(openAPI *openapi.OpenAPI, outputPath string) error {
 	}
 
 	g.log.Debug("writing OpenAPI file", zap.String("path", path))
-	err = os.WriteFile(path, data, 0644)
+	err = os.WriteFile(path, data, 0600)
 	if err != nil {
 		g.log.Error("error writing file", zap.Error(err), zap.String("path", path))
 		return fmt.Errorf("error write file: %w", err)
@@ -295,15 +293,16 @@ func (g *Generator) detectUnionTypes() map[string][]string {
 func (g *Generator) convertDataTypeToProperty(dt telegram.DataType) openapi.Property {
 	if dt.IsArray {
 		var innerProperty openapi.Property
-		if len(dt.Types) > 1 {
+		switch {
+		case len(dt.Types) > 1:
 			innerProperty = openapi.Property{
 				OneOf: g.convertTypesToProperties(dt.Types),
 			}
-		} else if strings.HasPrefix(g.convertType(dt.Types[0]), "#/components/schemas/") {
+		case strings.HasPrefix(g.convertType(dt.Types[0]), "#/components/schemas/"):
 			innerProperty = openapi.Property{
 				Ref: g.convertType(dt.Types[0]),
 			}
-		} else {
+		default:
 			innerProperty = openapi.Property{
 				Type: g.convertType(dt.Types[0]),
 			}
@@ -336,10 +335,9 @@ func (g *Generator) convertDataTypeToProperty(dt telegram.DataType) openapi.Prop
 		return openapi.Property{
 			Ref: g.convertType(dt.Types[0]),
 		}
-	} else {
-		return openapi.Property{
-			Type: g.convertType(dt.Types[0]),
-		}
+	}
+	return openapi.Property{
+		Type: g.convertType(dt.Types[0]),
 	}
 }
 

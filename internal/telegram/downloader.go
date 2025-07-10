@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -14,8 +15,19 @@ type PageAPI struct {
 	Document *goquery.Document
 }
 
-func GetPage(url string) (*PageAPI, error) {
-	res, err := http.Get(url)
+func GetPage(urlStr string) (*PageAPI, error) {
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return nil, fmt.Errorf("unsupported URL scheme: %s", parsedURL.Scheme)
+	}
+	if parsedURL.Host == "" {
+		return nil, fmt.Errorf("URL must have a host")
+	}
+
+	res, err := http.Get(parsedURL.String())
 	if err != nil {
 		return nil, err
 	}

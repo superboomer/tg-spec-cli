@@ -11,7 +11,7 @@ func (p *PageAPI) GetVersion() (string, error) {
 	var version string
 	var foundRecentChanges bool
 
-	p.Document.Find("strong").Each(func(i int, s *goquery.Selection) {
+	p.Document.Find("strong").Each(func(_ int, s *goquery.Selection) {
 		if strings.Contains(s.Text(), "Bot API") {
 			if version != "" {
 				return
@@ -24,7 +24,7 @@ func (p *PageAPI) GetVersion() (string, error) {
 		return version, nil
 	}
 
-	p.Document.Find("*").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	p.Document.Find("*").EachWithBreak(func(_ int, s *goquery.Selection) bool {
 		if !foundRecentChanges && s.Is("h3") && strings.Contains(strings.ToLower(s.Text()), "recent changes") {
 			foundRecentChanges = true
 			return true // continue

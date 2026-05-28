@@ -6,14 +6,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-func TestNew(t *testing.T) {
-	log := zaptest.NewLogger(t)
-	app := New(log, "http://example.com", "output.json")
-	if app == nil {
-		t.Error("New() returned nil")
-	}
-}
-
 func TestNewWithType(t *testing.T) {
 	log := zaptest.NewLogger(t)
 	app := NewWithType(log, "http://example.com", "output.json", "botapi")

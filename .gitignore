@@ -6,7 +6,8 @@
 *.dylib
 *.test
 
-.json
+# Generated OpenAPI specifications
+*.json
 
 # Output directories
 /specs/

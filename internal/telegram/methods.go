@@ -35,7 +35,7 @@ func (p *PageAPI) GetMethods() ([]Method, error) {
 		s := sel.Eq(i)
 		switch {
 		case s.Is("h4"):
-			if currentMethod.Name != "" && len(currentMethod.Parameters) > 0 {
+			if isMethodName(currentMethod.Name) {
 				methods = append(methods, currentMethod)
 			}
 			currentMethod = Method{Name: strings.TrimSpace(s.Text())}
@@ -52,7 +52,9 @@ func (p *PageAPI) GetMethods() ([]Method, error) {
 					nextSibling.Contents().Each(func(_ int, s *goquery.Selection) {
 						fullText += s.Text()
 
-						if strings.Contains(s.Text(), "array of") {
+						// The documentation phrases array returns as "Array of X"
+						// (capitalized), so match case-insensitively.
+						if strings.Contains(strings.ToLower(s.Text()), "array of") {
 							isArray = true
 						}
 						if goquery.NodeName(s) == "em" {
@@ -128,11 +130,23 @@ func (p *PageAPI) GetMethods() ([]Method, error) {
 		}
 	}
 
-	if currentMethod.Name != "" && len(currentMethod.Parameters) > 0 {
+	if isMethodName(currentMethod.Name) {
 		methods = append(methods, currentMethod)
 	}
 
 	return methods, nil
+}
+
+// isMethodName reports whether name looks like a Telegram Bot API method name.
+// Method names are single camelCase tokens starting with a lowercase letter
+// (e.g. getMe, sendMessage), which distinguishes them from type names
+// (uppercase first letter) and section headings (which contain spaces).
+func isMethodName(name string) bool {
+	if name == "" || strings.ContainsAny(name, " \t\n") {
+		return false
+	}
+	first := []rune(name)[0]
+	return unicode.IsLetter(first) && unicode.IsLower(first)
 }
 
 func isFirstLetterUppercase(s string) bool {

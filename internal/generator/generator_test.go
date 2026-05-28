@@ -7,14 +7,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-func TestNew(t *testing.T) {
-	log := zaptest.NewLogger(t)
-	gen := New(log, "1.0", map[string]telegram.Type{}, []telegram.Method{})
-	if gen == nil {
-		t.Error("New() returned nil")
-	}
-}
-
 func TestNewWithType(t *testing.T) {
 	log := zaptest.NewLogger(t)
 	gen := NewWithType(log, "1.0", map[string]telegram.Type{}, []telegram.Method{}, "gateway")

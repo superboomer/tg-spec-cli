@@ -49,10 +49,7 @@ func (p *PageAPI) LoadTypes() error {
 		s := sel.Eq(i)
 		switch {
 		case s.Is("h4"):
-			if currentType.Name != "" && strings.Contains(currentType.Description, "A placeholder,") {
-				types = append(types, currentType)
-			}
-			if currentType.Name != "" && (len(currentType.Fields) > 0 || isUnionType(currentType.Description)) {
+			if shouldKeepType(currentType) {
 				types = append(types, currentType)
 			}
 			currentType = Type{Name: strings.TrimSpace(s.Text())}
@@ -85,6 +82,7 @@ func (p *PageAPI) LoadTypes() error {
 			s.Find("tbody > tr").Each(func(_ int, tr *goquery.Selection) {
 				var field Field
 				var isRequired bool
+				var hasRequiredColumn bool
 				tr.Find("td").Each(func(j int, td *goquery.Selection) {
 					header := tr.Parent().Prev().Find("th").Eq(j).Text()
 					switch strings.TrimSpace(header) {
@@ -97,21 +95,26 @@ func (p *PageAPI) LoadTypes() error {
 							field.Type[i] = strings.TrimSpace(t)
 						}
 					case "Required":
-						isRequired = td.Text() == "Yes"
+						hasRequiredColumn = true
+						isRequired = strings.TrimSpace(td.Text()) == "Yes"
 					case "Description":
 						field.Description = td.Text()
 					default:
 					}
 				})
-				field.Required = isRequired
+				// Bot API type tables have no "Required" column; optional fields
+				// instead begin their description with "Optional.". Fall back to
+				// that convention when the column is absent.
+				if hasRequiredColumn {
+					field.Required = isRequired
+				} else {
+					field.Required = !strings.HasPrefix(strings.TrimSpace(field.Description), "Optional")
+				}
 				currentType.Fields = append(currentType.Fields, field)
 			})
 		}
 	}
-	if currentType.Name != "" && strings.Contains(currentType.Description, "A placeholder,") {
-		types = append(types, currentType)
-	}
-	if currentType.Name != "" && ((len(currentType.Fields) > 0) || (len(currentType.Fields) == 0 && isUnionType(currentType.Description))) {
+	if shouldKeepType(currentType) {
 		types = append(types, currentType)
 	}
 
@@ -122,7 +125,37 @@ func (p *PageAPI) LoadTypes() error {
 	return nil
 }
 
-func isUnionType(desc string) bool {
+// shouldKeepType reports whether a parsed type is worth emitting: it has a name
+// and is either a concrete object with fields, a union type, or a documented
+// placeholder type (e.g. "A placeholder, currently holds no information.").
+func shouldKeepType(t Type) bool {
+	if t.Name == "" {
+		return false
+	}
+	return len(t.Fields) > 0 ||
+		IsUnionDescription(t.Description) ||
+		strings.Contains(t.Description, "A placeholder,")
+}
+
+// unionPhrases are the documentation phrases that indicate a type is a union
+// (a "one of" abstraction) rather than a concrete object with fields. It is the
+// single source of truth shared by type parsing and OpenAPI generation so the
+// two stages never disagree about what counts as a union type.
+var unionPhrases = []string{
+	"this object represents",
+	"this object describes",
+	"this object contains",
+	"can be one of",
+	"should be one of",
+}
+
+// IsUnionDescription reports whether a type description identifies a union type.
+func IsUnionDescription(desc string) bool {
 	desc = strings.ToLower(desc)
-	return strings.Contains(desc, "this object represents") || strings.Contains(desc, "this object describes") || strings.Contains(desc, "this object contains") || strings.Contains(desc, "can be one of")
+	for _, phrase := range unionPhrases {
+		if strings.Contains(desc, phrase) {
+			return true
+		}
+	}
+	return false
 }

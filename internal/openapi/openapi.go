@@ -16,9 +16,9 @@ type Info struct {
 }
 
 type Server struct {
-	URL         string    `json:"url"`
-	Description string    `json:"description"`
-	Variables   Variables `json:"variables,omitempty"`
+	URL         string     `json:"url"`
+	Description string     `json:"description"`
+	Variables   *Variables `json:"variables,omitempty"`
 }
 
 type Variables struct {

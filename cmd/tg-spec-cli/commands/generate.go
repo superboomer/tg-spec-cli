@@ -24,12 +24,17 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		log, err := logger.New(logLevel)
 		if err != nil {
-			fmt.Printf("failed to create logger: %v", err)
+			fmt.Printf("failed to create logger: %v\n", err)
+			return
 		}
 		defer func(log *zap.Logger) {
-			err := log.Sync()
-			if err != nil && !strings.Contains(err.Error(), "inappropriate ioctl for device") {
-				fmt.Printf("failed to sync logger: %v", err)
+			// Syncing a console (stderr) on some platforms returns a harmless
+			// error ("inappropriate ioctl for device" on Linux, "bad file
+			// descriptor" on macOS); ignore those and only report real failures.
+			if err := log.Sync(); err != nil &&
+				!strings.Contains(err.Error(), "inappropriate ioctl for device") &&
+				!strings.Contains(err.Error(), "bad file descriptor") {
+				fmt.Printf("failed to sync logger: %v\n", err)
 			}
 		}(log)
 

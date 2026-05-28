@@ -2,13 +2,16 @@ package telegram
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+// httpClient is used to fetch documentation pages. It enforces a timeout so a
+// slow or unresponsive server can't hang the CLI indefinitely.
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 type PageAPI struct {
 	Types    map[string]Type
@@ -27,7 +30,7 @@ func GetPage(urlStr string) (*PageAPI, error) {
 		return nil, fmt.Errorf("URL must have a host")
 	}
 
-	res, err := http.Get(parsedURL.String())
+	res, err := httpClient.Get(parsedURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -36,11 +39,7 @@ func GetPage(urlStr string) (*PageAPI, error) {
 		return nil, fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(body)))
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -16,14 +16,6 @@ type App struct {
 	typeFlag   string
 }
 
-func New(log *zap.Logger, url, outputPath string) *App {
-	return &App{
-		log:        log,
-		url:        url,
-		outputPath: outputPath,
-	}
-}
-
 func NewWithType(log *zap.Logger, url, outputPath, typeFlag string) *App {
 	return &App{
 		log:        log,

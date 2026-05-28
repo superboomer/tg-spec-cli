@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -17,7 +16,6 @@ func TestParseDataType(t *testing.T) {
 	}
 	pageAPI := &PageAPI{}
 	cell := doc.Find("td")
-	fmt.Println("DEBUG: doc.Text() for array:", cell.Text())
 	dt := pageAPI.parseDataType(cell)
 	if !dt.IsArray {
 		t.Errorf("Expected IsArray to be true, got false")
@@ -33,7 +31,6 @@ func TestParseDataType(t *testing.T) {
 	html2 := `<table><tr><td>String or Integer</td></tr></table>`
 	doc2, _ := goquery.NewDocumentFromReader(strings.NewReader(html2))
 	cell2 := doc2.Find("td")
-	fmt.Println("DEBUG: doc.Text() for multi:", cell2.Text())
 	dt2 := pageAPI.parseDataType(cell2)
 	if len(dt2.Types) != 2 || dt2.Types[0] != "String" || dt2.Types[1] != "Integer" {
 		t.Errorf("Expected Types [String Integer], got %v", dt2.Types)
@@ -43,7 +40,6 @@ func TestParseDataType(t *testing.T) {
 	html3 := `<table><tr><td>Boolean</td></tr></table>`
 	doc3, _ := goquery.NewDocumentFromReader(strings.NewReader(html3))
 	cell3 := doc3.Find("td")
-	fmt.Println("DEBUG: doc.Text() for single:", cell3.Text())
 	dt3 := pageAPI.parseDataType(cell3)
 	if len(dt3.Types) != 1 || dt3.Types[0] != "Boolean" {
 		t.Errorf("Expected Types [Boolean], got %v", dt3.Types)

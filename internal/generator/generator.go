@@ -20,15 +20,6 @@ type Generator struct {
 	typeFlag string
 }
 
-func New(log *zap.Logger, version string, types map[string]telegram.Type, methods []telegram.Method) *Generator {
-	return &Generator{
-		log:     log,
-		version: version,
-		types:   types,
-		methods: methods,
-	}
-}
-
 func NewWithType(log *zap.Logger, version string, types map[string]telegram.Type, methods []telegram.Method, typeFlag string) *Generator {
 	return &Generator{
 		log:      log,
@@ -68,7 +59,7 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 			{
 				URL:         "https://api.telegram.org/bot{token}/",
 				Description: "Production Telegram Bot API server",
-				Variables: openapi.Variables{
+				Variables: &openapi.Variables{
 					Token: &openapi.TokenVariable{
 						Description: "Bot token provided by BotFather. It is used to authenticate requests to the Telegram Bot API.",
 						Default:     "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ",
@@ -78,7 +69,7 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 			{
 				URL:         "https://api.telegram.org/beta/bot{token}/",
 				Description: "Beta Telegram Bot API server",
-				Variables: openapi.Variables{
+				Variables: &openapi.Variables{
 					Token: &openapi.TokenVariable{
 						Description: "Bot token provided by BotFather. It is used to authenticate requests to the Telegram Bot API.",
 						Default:     "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ",
@@ -131,7 +122,6 @@ func (g *Generator) Generate() (*openapi.OpenAPI, error) {
 		if variants, ok := unionTypes[t.Name]; ok {
 			schema := openapi.Schema{
 				OneOf:       []openapi.Property{},
-				Type:        "object",
 				Description: t.Description,
 			}
 			for _, v := range variants {
@@ -244,9 +234,11 @@ func (g *Generator) Save(openAPI *openapi.OpenAPI, outputPath string) error {
 	}
 
 	if strings.Contains(path, "%v") {
-		path = fmt.Sprintf(path, g.version)
+		// Sanitize only the version (it may be a date like "February 26, 2025"
+		// for the gateway API) so user-supplied directories are left untouched.
+		versionSafe := strings.ReplaceAll(strings.ReplaceAll(g.version, " ", ""), ",", "-")
+		path = strings.ReplaceAll(path, "%v", versionSafe)
 	}
-	path = strings.ReplaceAll(strings.ReplaceAll(path, " ", ""), ",", "-")
 
 	dir := "."
 	if idx := strings.LastIndex(path, "/"); idx != -1 {
@@ -273,8 +265,7 @@ func (g *Generator) detectUnionTypes() map[string][]string {
 	for _, t := range g.types {
 		desc := t.Description
 
-		if len(t.Fields) == 0 && (strings.Contains(desc, "this object represents") || strings.Contains(desc, "this object describes") || strings.Contains(desc, "should be one of") || strings.Contains(desc, "can be one of")) {
-
+		if len(t.Fields) == 0 && telegram.IsUnionDescription(desc) {
 			lines := strings.Split(desc, "\n")
 			for _, line := range lines {
 				line = strings.TrimSpace(line)
@@ -291,6 +282,11 @@ func (g *Generator) detectUnionTypes() map[string][]string {
 }
 
 func (g *Generator) convertDataTypeToProperty(dt telegram.DataType) openapi.Property {
+	if len(dt.Types) == 0 {
+		g.log.Warn("data type has no types; defaulting to object")
+		return openapi.Property{Type: "object"}
+	}
+
 	if dt.IsArray {
 		var innerProperty openapi.Property
 		switch {
@@ -374,15 +370,21 @@ func (g *Generator) convertType(t string) string {
 
 func (g *Generator) convertStringSliceToDataType(types []string) telegram.DataType {
 	isArray := false
-	arrayDepth := 0
+	maxDepth := 0
 	cleanTypes := make([]string, 0, len(types))
 
 	for _, t := range types {
 		currentType := t
+		depth := 0
 		for strings.HasPrefix(currentType, "Array of ") {
-			isArray = true
-			arrayDepth++
+			depth++
 			currentType = strings.TrimPrefix(currentType, "Array of ")
+		}
+		if depth > 0 {
+			isArray = true
+		}
+		if depth > maxDepth {
+			maxDepth = depth
 		}
 		cleanTypes = append(cleanTypes, currentType)
 	}
@@ -390,7 +392,7 @@ func (g *Generator) convertStringSliceToDataType(types []string) telegram.DataTy
 	return telegram.DataType{
 		Types:      cleanTypes,
 		IsArray:    isArray,
-		ArrayDepth: arrayDepth,
+		ArrayDepth: maxDepth,
 	}
 }
 
